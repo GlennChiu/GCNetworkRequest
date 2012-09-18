@@ -54,6 +54,8 @@
                                                               id JSONObject = [operation processJSON:data];
                                                               
                                                               dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(JSONObject, response);});
+                                                              
+                                                              operation = nil;
                                                           });
                                                       }
                                                       
@@ -66,6 +68,8 @@
                                                               id JSONObject = [operation processJSON:data];
                                                               
                                                               dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(JSONObject, response, [operation error]);});
+                                                              
+                                                              operation = nil;
                                                           });
                                                       }
                                                   }];

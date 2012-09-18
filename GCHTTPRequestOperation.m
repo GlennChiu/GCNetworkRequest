@@ -51,7 +51,7 @@ const struct _userinfo_keys _userinfo_keys = {
     }
 };
 
-extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
+inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 {
     return queue ?: dispatch_get_main_queue();
 }
@@ -125,7 +125,7 @@ extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     GC_DISPATCH_RELEASE(self->_bg_lock);
 }
 
-+ (void)threadMain
++ (void)threadMain:(id)sender
 {
     do
     {
@@ -140,14 +140,11 @@ extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 + (NSThread *)workerThread
 {
     static NSThread *workerThread = nil;
-    static dispatch_once_t oncePredicate;
+    static dispatch_once_t oncePredicate = (dispatch_once_t)0;
     
     dispatch_once(&oncePredicate, ^{
-        if (!workerThread)
-        {
-            workerThread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain) object:nil];
-            [workerThread start];
-        }
+        workerThread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain:) object:nil];
+        [workerThread start];
     });
     return workerThread;
 }
@@ -196,8 +193,6 @@ extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 {
     [self endBackgroundTask];
     
-    [self cleanupStream:self->_oStream];
-    
     NSThread *workerThread = [[self class] workerThread];
     if (![workerThread isCancelled]) [workerThread cancel];
     
@@ -234,6 +229,7 @@ extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
         self->_isCancelled = YES;
         [self didChangeValueForKey:@"isCancelled"];
         
+        [self performSelector:@selector(cleanupStream:) onThread:[[self class] workerThread] withObject:self->_oStream waitUntilDone:NO];
         [self performSelector:@selector(cancelConnection) onThread:[[self class] workerThread] withObject:nil waitUntilDone:NO];
     }
     

@@ -55,6 +55,8 @@
                                                              NSXMLParser *parser = [operation XMLParserFromData:data];
                                                              
                                                              dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(parser, response);});
+                                                             
+                                                             operation = nil;
                                                          });
                                                      }
                                                      
@@ -67,6 +69,8 @@
                                                              NSXMLParser *parser = [operation XMLParserFromData:data];
                                                              
                                                              dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(parser, response, error);});
+                                                             
+                                                             operation = nil;
                                                          });
                                                      }
                                                  }];
@@ -95,6 +99,8 @@
                                                              NSXMLDocument *document = [operation XMLDocumentFromData:data];
                                                              
                                                              dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(document, response);});
+                                                             
+                                                             operation = nil;
                                                          });
                                                      }
                                                      
@@ -107,6 +113,8 @@
                                                              NSXMLDocument *document = [operation XMLDocumentFromData:data];
                                                              
                                                              dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(document, response, [operation error]);});
+                                                             
+                                                             operation = nil;
                                                          });
                                                      }
                                                  }];
