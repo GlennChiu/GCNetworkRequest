@@ -16,12 +16,14 @@ Features / Design
 Requirements
 ------------
 
-GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requires Xcode 4.4 and above with LLVM Compiler 4.0.
+GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requires Xcode 4.5 and above and LLVM Compiler 4.0.
 
 Installation
 ------------
 
-Download the library and add all files to your Xcode project. Check if the files show up in the 'compile sources' section of your target. Otherwise, assign the target to the files manually.
+Clone the repository and add all files to your Xcode project. Check if the files show up in the 'compile sources' section of your target. Otherwise, assign the target to the files manually.
+
+The global header to include all source files is `GCNetworkRequest.h`
 
 If you use the library in a non-ARC project, make sure you add the `-fobjc-arc` compiler flag for all implementation files.
 
@@ -77,7 +79,7 @@ A network request can be cancelled at any time.
 HTTP pipelining is a technique in which multiple HTTP requests are sent on a single TCP connection without waiting for the corresponding responses. If your web server supports this, you can enable it via this method.
 
 ```
-[request sendRequestImmediatelyAfterPreviousRequest:YES];
+[request requestShouldUseHTTPPipelining:YES];
 ```
 #### Start Network Operation
 
@@ -90,9 +92,8 @@ The library is still in beta.
 
 * Add valid content types per operation.
 * Test multipart/form-data.
-* Test basic auth.
 * Monitor network reachability.
-* Many more features to come, including asynchronous image loading via a single method.
+* Many more features to come, including asynchronous image loading.
 
 License
 -------
