@@ -28,8 +28,8 @@ If you use the library in a non-ARC project, make sure you add the `-fobjc-arc` 
 Classes
 -------
 
-| **Network Operation** | |
-| |
+| Network Operation | |
+| :--- | :--- |
 | [GCHTTPRequestOperation](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCHTTPRequestOperation.h) | Base class for network operations with completion and error handler blocks. |
 | [GCJSONRequestOperaton](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCJSONRequestOperation.h) | A subclass of `GCHTTPRequestOperation` which downloads and parses JSON response data. |
 | [GCXMLRequestOperation](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCXMLRequestOperation.h) | A subclass of `GCHTTPRequestOperation` which downloads XML response data. It uses NSXMLParser output for iOS or NSXMLDocument output for OS X via seperate methods. |
@@ -47,18 +47,16 @@ The **callbackQueue** parameter determines in which GCD queue the completion and
 
 ```
 GCNetworkRequest *request = [GCNetworkRequest requestWithURLString:@"http://maps.googleapis.com/maps/api/geocode/json?address=Amsterdam,+Nederland&sensor=true"];
-
-GCJSONRequestOperation *operation = nil;        
-operation = [GCJSONRequestOperation JSONRequest:request
-                                  callBackQueue:nil
-                              completionHandler:^(id JSON, NSHTTPURLResponse *response) {
-                                  // Do something with 'JSON'..                        
-                              } errorHandler:^(id JSON, NSHTTPURLResponse *response, NSError *error) {
-                                  /* Do something with 'error'.. 
-                                  	 If you get a JSON response as error, log the output of 'JSON' */                               
-                              }];
+        
+GCJSONRequestOperation *operation = [GCJSONRequestOperation JSONRequest:request
+                                  			  	callBackQueue:nil
+                              			      	completionHandler:^(id JSON, NSHTTPURLResponse *response) {
+                                  			  // Do something with 'JSON'..                        
+                              			      } errorHandler:^(id JSON, NSHTTPURLResponse *response, NSError *error) {
+                                  		 	  /* Do something with 'error'.. 
+                                  	 		   If you get a JSON response as error, log the output of 'JSON' */                               
+                              			      }];
 [operation startRequest];
-
 ```
 #### Cancel Network Request
 
@@ -66,7 +64,6 @@ A network request can ben cancelled at any time.
 
 ```
 [operation cancelRequest];
-
 ```
 #### Track download progress
 
@@ -74,7 +71,6 @@ A network request can ben cancelled at any time.
 [operation downloadProgressHandler:^(NSUInteger bytesRead, NSUInteger totalBytesRead, NSUInteger totalBytesExpectedToRead) {
 	// This handler gets a continuous callback and the parameters can be used to track the progress 
 }];
-
 ```
 #### HTTP Pipelining
 
@@ -82,7 +78,6 @@ HTTP pipelining is a technique in which multiple HTTP requests are sent on a sin
 
 ```
 [request sendRequestImmediatelyAfterPreviousRequest:YES];
-
 ```
 #### Start Network Operation
 
