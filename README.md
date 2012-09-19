@@ -1,7 +1,103 @@
 GCNetworkRequest
 ================
 
-An easy-to-use asynchronous HTTP networking library for iOS and OS X
+An easy-to-use asynchronous HTTP networking library for iOS and OS X.
+
+Features / Design
+-----------------
+
+* Fully concurrent / multithreaded design.
+* High performance. Modern libdispatch support for fast semaphores and reader/writer locks.
+* Very easy-to-use API, even for developers who are new to HTTP networking or are unfamiliar with Cocoa's networking classes.
+* Modular architecture. Easy to expand.
+* Supports iOS background task completion with additional completion handler.
+* Full ARC support.
+
+Requirements
+------------
+
+GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requires Xcode 4.4 and above with LLVM Compiler 4.0.
+
+Installation
+------------
+
+Download the library and add all files to your Xcode project. Check if the files show up in the 'compile sources' section of your target. Otherwise, assign the target to the files manually.
+
+If you use the library in a non-ARC project, make sure you add the `-fobjc-arc` compiler flag for all implementation files.
+
+Classes
+-------
+
+| **Network Operation** | |
+| |
+| [GCHTTPRequestOperation](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCHTTPRequestOperation.h) | Base class for network operations with completion and error handler blocks. |
+| [GCJSONRequestOperaton](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCJSONRequestOperation.h) | A subclass of `GCHTTPRequestOperation` which downloads and parses JSON response data. |
+| [GCXMLRequestOperation](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCXMLRequestOperation.h) | A subclass of `GCHTTPRequestOperation` which downloads XML response data. It uses NSXMLParser output for iOS or NSXMLDocument output for OS X via seperate methods. |
+| **Network Request** | |
+| [GCNetworkRequest](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkRequest.h) | Encapsulates an `NSMutableURLRequest` and adds simple-to-use methods for uploading data and user authentication. This class is needed as parameter for `GCHTTPRequestOperation` and its subclasses. |
+| **Network Queue** | |
+| [GCNetworkQueue](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkQueue.h) | A subclass of `NSOperationQueue` and is primarily meant for those who aren't familiar with operation queues or concurrency in general. | 
+
+Usage
+-----
+
+#### JSON Request
+
+The **callbackQueue** parameter determines in which GCD queue the completion and error handlers gets called. When you pass in `nil` or `NULL` the block will be called on the main thread. When you want to perform a long task in the completion handler, it's better to insert a concurrent dispatch queue. This way it won't block the main thread and it keeps the app responsive.
+
+```
+GCNetworkRequest *request = [GCNetworkRequest requestWithURLString:@"http://maps.googleapis.com/maps/api/geocode/json?address=Amsterdam,+Nederland&sensor=true"];
+
+GCJSONRequestOperation *operation = nil;        
+operation = [GCJSONRequestOperation JSONRequest:request
+                                  callBackQueue:nil
+                              completionHandler:^(id JSON, NSHTTPURLResponse *response) {
+                                  // Do something with 'JSON'..                        
+                              } errorHandler:^(id JSON, NSHTTPURLResponse *response, NSError *error) {
+                                  /* Do something with 'error'.. 
+                                  	 If you get a JSON response as error, log the output of 'JSON' */                               
+                              }];
+[operation startRequest];
+
+```
+#### Cancel Network Request
+
+A network request can ben cancelled at any time.
+
+```
+[operation cancelRequest];
+
+```
+#### Track download progress
+
+```
+[operation downloadProgressHandler:^(NSUInteger bytesRead, NSUInteger totalBytesRead, NSUInteger totalBytesExpectedToRead) {
+	// This handler gets a continuous callback and the parameters can be used to track the progress 
+}];
+
+```
+#### HTTP Pipelining
+
+HTTP pipelining is a technique in which multiple HTTP requests are sent on a single TCP connection without waiting for the corresponding responses. If your web server supports this, you can enable it via this method.
+
+```
+[request sendRequestImmediatelyAfterPreviousRequest:YES];
+
+```
+#### Start Network Operation
+
+There are two ways in which you can start a network operation. For a single operation you can call the `-startRequest:` method. If you have multiple operation scheduled, then you can use the `GCNetworkQueue` class to add operations on a single queue. A network queue allows you to control the maximum amount of concurrent connections. For iOS it's best to keep it at a max of two or three connections on a cellular connection.
+
+Todo
+----
+
+The library is still in beta.
+
+* Add valid content types per operation.
+* Test multipart/form-data.
+* Test basic auth.
+* Monitor network reachability.
+* Many more features to come, including asynchronous image loading via a single method.
 
 License
 -------
