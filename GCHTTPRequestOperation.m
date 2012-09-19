@@ -35,13 +35,12 @@
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
-enum
+typedef enum : signed char
 {
     GCOperationStateReady           = 1 << 1,
     GCOperationStateExecuting       = 1 << 2,
     GCOperationStateFinished        = 1 << 3
-};
-typedef signed char GCOperationState;
+} GCOperationState;
 
 const struct _userinfo_keys _userinfo_keys = {
     .userinfo_key = @"userinfo_key",
@@ -240,7 +239,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 {
     if (self->_connection) [self->_connection cancel];
     
-    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[self->_request URL] forKey:NSURLErrorFailingURLErrorKey];
+    NSDictionary *userInfo = @{NSURLErrorFailingURLErrorKey : [self->_request URL]};
     NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:userInfo];
     [self performSelector:@selector(connection:didFailWithError:) withObject:self->_connection withObject:error];
 }
@@ -340,8 +339,8 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
             {
                 [[challenge sender] cancelAuthenticationChallenge:challenge];
                 
-                NSMutableDictionary *errorUserInfo = [NSMutableDictionary dictionary];
-                [errorUserInfo setValue:@"Authentication error" forKey:NSLocalizedDescriptionKey];
+                NSMutableDictionary *errorUserInfo = [@{} mutableCopy];
+                errorUserInfo[NSLocalizedDescriptionKey] = @"Authentication error";
                 NSError *error = [NSError errorWithDomain:[@"com." stringByAppendingString:NSStringFromClass([self class])]
                                                      code:401
                                                  userInfo:errorUserInfo];
@@ -365,7 +364,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     }
     else
     {
-        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:[NSDate date] forKey:@"Cached Date"];
+        NSDictionary *userInfo = @{@"Cached Date" : [NSDate date]};
         newCachedResponse = [[NSCachedURLResponse alloc] initWithResponse:[cachedResponse response]
                                                                      data:[cachedResponse data]
                                                                  userInfo:userInfo
@@ -478,12 +477,12 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 
 - (NSString *)username
 {
-    return self->_username ?: (self->_username = [self->_userInfo objectForKey:_userinfo_keys.keys.username]);
+    return self->_username ?: (self->_username = self->_userInfo[_userinfo_keys.keys.username]);
 }
 
 - (NSString *)password
 {
-    return self->_password ?: (self->_password = [self->_userInfo objectForKey:_userinfo_keys.keys.password]);
+    return self->_password ?: (self->_password = self->_userInfo[_userinfo_keys.keys.password]);
 }
 
 - (GCOperationState)operationState

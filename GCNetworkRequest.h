@@ -41,6 +41,9 @@
                 HTTPMethod:(NSString *)method
                 parameters:(NSMutableDictionary *)body;
 
+- (void)addValue:(NSString *)value
+  forHeaderField:(NSString *)field;
+
 - (void)setUsername:(NSString *)username
            password:(NSString *)password;
 
@@ -50,7 +53,7 @@
 - (void)addData:(NSData *)data
          forKey:(NSString *)key;
 
-- (void)sendRequestImmediatelyAfterPreviousRequest:(BOOL)send;
+- (void)requestShouldUseHTTPPipelining:(BOOL)shouldUsePipelining;
 
 - (void)setTimeoutIntervalInSeconds:(NSTimeInterval)seconds;
 

@@ -86,9 +86,14 @@ static NSString * GenerateBoundary()
     return self;
 }
 
+- (void)addValue:(NSString *)value forHeaderField:(NSString *)field
+{
+    [self addValue:value forHTTPHeaderField:field];
+}
+
 - (void)setUsername:(NSString *)username password:(NSString *)password
 {
-    NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:username, _userinfo_keys.keys.username, password, _userinfo_keys.keys.password, nil];
+    NSDictionary *userInfo = @{_userinfo_keys.keys.username : username, _userinfo_keys.keys.password : password};
     
     [NSURLProtocol setProperty:userInfo forKey:_userinfo_keys.userinfo_key inRequest:self];
 }
@@ -105,7 +110,7 @@ static NSString * GenerateBoundary()
         @autoreleasepool {
             
             NSString *dictKey = (NSString *)obj;
-            id dataValue = [dict valueForKey:dictKey];
+            id dataValue = dict[dictKey];
             
             [postData appendData:[boundary dataUsingEncoding:NSUTF8StringEncoding]];
             
@@ -122,7 +127,7 @@ static NSString * GenerateBoundary()
             }
             else if (([dataValue isKindOfClass:[NSData class]]))
             {
-                [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", dictKey, [allDictKeys objectAtIndex:idx]] dataUsingEncoding:NSUTF8StringEncoding]];
+                [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", dictKey, allDictKeys[idx]] dataUsingEncoding:NSUTF8StringEncoding]];
                 [postData appendData:[@"Content-Type: application/octet-stream\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
                 [postData appendData:dataValue];
             }
@@ -138,7 +143,7 @@ static NSString * GenerateBoundary()
 
 - (NSMutableDictionary *)dataDict
 {
-    return self->_dataDict ?: (self->_dataDict = [NSMutableDictionary dictionary]);
+    return self->_dataDict ?: (self->_dataDict = [@{} mutableCopy]);
 }
 
 - (void)addBodyData
@@ -159,7 +164,7 @@ static NSString * GenerateBoundary()
 
 - (void)addData:(NSData *)data forKey:(NSString *)key
 {
-    [[self dataDict] setObject:data forKey:key];
+    [self dataDict][key] = data;
     
     [self addBodyData];
 }
@@ -178,9 +183,9 @@ static NSString * GenerateBoundary()
     [self addData:fileData forKey:key];
 }
 
-- (void)sendRequestImmediatelyAfterPreviousRequest:(BOOL)send
+- (void)requestShouldUseHTTPPipelining:(BOOL)shouldUsePipelining
 {
-    [self setHTTPShouldUsePipelining:send];
+    [self setHTTPShouldUsePipelining:shouldUsePipelining];
 }
 
 - (void)setTimeoutIntervalInSeconds:(NSTimeInterval)seconds
