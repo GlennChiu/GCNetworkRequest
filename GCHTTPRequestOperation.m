@@ -35,11 +35,11 @@
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
-typedef enum : signed char
+typedef enum : unsigned char
 {
-    GCOperationStateReady           = 1 << 1,
-    GCOperationStateExecuting       = 1 << 2,
-    GCOperationStateFinished        = 1 << 3
+    GCOperationStateReady           = 1 << 0,
+    GCOperationStateExecuting       = 1 << 1,
+    GCOperationStateFinished        = 1 << 2
 } GCOperationState;
 
 const struct _userinfo_keys _userinfo_keys = {
