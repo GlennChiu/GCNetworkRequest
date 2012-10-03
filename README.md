@@ -16,7 +16,7 @@ Features / Design
 Requirements
 ------------
 
-GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requires Xcode 4.5 and above and LLVM Compiler 4.0.
+GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requires Xcode 4.5 and above and LLVM Compiler 4.1.
 
 Installation
 ------------
