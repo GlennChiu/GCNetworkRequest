@@ -38,7 +38,9 @@ Classes
 | **Network Request** | |
 | [GCNetworkRequest](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkRequest.h) | Encapsulates an `NSMutableURLRequest` and adds simple-to-use methods for uploading data and user authentication. This class is needed as parameter for `GCHTTPRequestOperation` and its subclasses. |
 | **Network Queue** | |
-| [GCNetworkQueue](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkQueue.h) | A subclass of `NSOperationQueue` and is primarily meant for those who aren't familiar with operation queues or concurrency in general. | 
+| [GCNetworkQueue](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkQueue.h) | A subclass of `NSOperationQueue`. This class makes it easy to use concurrency. It also activates the network indicator in the status bar. |
+| **Network Reachability** | |
+| [GCNetworkReachability](https://github.com/GlennChiu/GCNetworkRequest/blob/master/GCNetworkReachability.h)| This class allows an application to monitor the network state. It can check whether an internet connection is available and if so, report whether the device is on WiFi or WWAN connection (3G, Edge). |
 
 Usage
 -----
@@ -91,8 +93,6 @@ Todo
 The library is still in beta.
 
 * Add valid content types per operation.
-* Test multipart/form-data.
-* Monitor network reachability.
 * Many more features to come, including asynchronous image loading.
 
 License
