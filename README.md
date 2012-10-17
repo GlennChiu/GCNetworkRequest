@@ -1,4 +1,4 @@
-GCNetworkRequest
+GCNetworkRequest (Beta, API not final)
 ================
 
 An easy-to-use asynchronous HTTP networking library for iOS and OS X.
@@ -92,7 +92,8 @@ Todo
 
 The library is still in beta.
 
-* Add valid content types per operation.
+* Add parameter encoding.
+* Improve multipart/form-data file upload (multiple files).
 * Many more features to come, including asynchronous image loading.
 
 License
