@@ -35,6 +35,24 @@
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
+#if TARGET_OS_IPHONE
+#   if __IPHONE_OS_VERSION_MIN_REQUIRED >= 60000
+#       define GC_DISPATCH_RELEASE(v) do {} while(0)
+#       define GC_DISPATCH_RETAIN(v) do {} while(0)
+#   else
+#       define GC_DISPATCH_RELEASE(v) dispatch_release(v)
+#       define GC_DISPATCH_RETAIN(v) dispatch_retain(v)
+#   endif
+#else
+#   if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1080
+#       define GC_DISPATCH_RELEASE(v) do {} while(0)
+#       define GC_DISPATCH_RETAIN(v) do {} while(0)
+#   else
+#       define GC_DISPATCH_RELEASE(v) dispatch_release(v)
+#       define GC_DISPATCH_RETAIN(v) dispatch_retain(v)
+#   endif
+#endif
+
 typedef enum : unsigned char
 {
     GCOperationStateReady           = 1 << 0,
@@ -95,7 +113,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     self = [super init];
     if (self)
     {
-        assert([[[[networkRequest URL] scheme] lowercaseString] isEqual:@"http"] || [[[[networkRequest URL] scheme] lowercaseString] isEqual:@"https"]);
+        assert([[[[networkRequest URL] scheme] lowercaseString] isEqualToString:@"http"] || [[[[networkRequest URL] scheme] lowercaseString] isEqualToString:@"https"]);
         
         self->_request = networkRequest;
         self->_userInfo = [NSURLProtocol propertyForKey:_userinfo_keys.userinfo_key inRequest:networkRequest];
@@ -495,7 +513,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 
 - (void)setOperationState:(GCOperationState)operationState
 {
-    dispatch_barrier_async(self->_con_queue, ^{
+    dispatch_block_t block = ^{
         
         assert(operationState > self->_operationState);
         
@@ -530,7 +548,9 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
                 [self didChangeValueForKey:@"isFinished"];
                 break;
         }
-    });
+    };
+    
+    dispatch_barrier_async(self->_con_queue, block);
 }
 
 @end
