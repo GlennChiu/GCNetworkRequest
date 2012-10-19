@@ -33,13 +33,30 @@
 #import "GCJSONRequestOperation.h"
 #import "GCXMLRequestOperation.h"
 
+typedef enum : unsigned char
+{
+    GCParameterEncodingURL = 1,
+    GCParameterEncodingJSON
+} GCParameterEncoding;
+
+@protocol GCMultiPartFormData;
+
 @interface GCNetworkRequest : NSMutableURLRequest
 
 + (id)requestWithURLString:(NSString *)url;
 
 + (id)requestWithURLString:(NSString *)url
                 HTTPMethod:(NSString *)method
-                parameters:(NSMutableDictionary *)body;
+                parameters:(NSDictionary *)parameters;
+
++ (id)requestWithURLString:(NSString *)url
+                HTTPMethod:(NSString *)method
+                parameters:(NSDictionary *)parameters
+                  encoding:(GCParameterEncoding)encoding;
+
++ (id)requestWithURLString:(NSString *)url
+                parameters:(NSDictionary *)parameters
+  multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block;
 
 - (void)addValue:(NSString *)value
   forHeaderField:(NSString *)field;
@@ -47,15 +64,31 @@
 - (void)setUsername:(NSString *)username
            password:(NSString *)password;
 
-- (void)addFileWithPath:(NSString *)file
-                 forKey:(NSString *)key;
-
-- (void)addData:(NSData *)data
-         forKey:(NSString *)key;
-
 - (void)requestShouldUseHTTPPipelining:(BOOL)shouldUsePipelining;
 
 - (void)setTimeoutIntervalInSeconds:(NSTimeInterval)seconds;
+
+@end
+
+@protocol GCMultiPartFormData <NSObject>
+
+- (void)addTextData:(NSString *)string
+                 name:(NSString *)name;
+
+- (void)addData:(NSData *)data
+           name:(NSString *)name;
+
+- (void)addData:(NSData *)data
+           name:(NSString *)name
+       filename:(NSString *)filename
+       mimeType:(NSString *)mimeType;
+
+- (void)addFileFromPath:(NSString *)filePath
+                   name:(NSString *)name;
+
+- (void)addFileFromPath:(NSString *)filePath
+                   name:(NSString *)name
+               mimeType:(NSString *)mimeType;
 
 @end
 
@@ -63,22 +96,4 @@
 #   define GCNRLog(fmt, ...) NSLog((@"%s [Line %d]\n" fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
 #   define GCNRLog(...) do {} while(0)
-#endif
-
-#if TARGET_OS_IPHONE
-#   if __IPHONE_OS_VERSION_MIN_REQUIRED >= 60000
-#       define GC_DISPATCH_RELEASE(v) do {} while(0)
-#       define GC_DISPATCH_RETAIN(v) do {} while(0)
-#   else
-#       define GC_DISPATCH_RELEASE(v) dispatch_release(v)
-#       define GC_DISPATCH_RETAIN(v) dispatch_retain(v)
-#   endif
-#else
-#   if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1080
-#       define GC_DISPATCH_RELEASE(v) do {} while(0)
-#       define GC_DISPATCH_RETAIN(v) do {} while(0)
-#   else
-#       define GC_DISPATCH_RELEASE(v) dispatch_release(v)
-#       define GC_DISPATCH_RETAIN(v) dispatch_retain(v)
-#   endif
 #endif

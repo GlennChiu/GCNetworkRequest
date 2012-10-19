@@ -35,20 +35,36 @@
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
-static NSString * GenerateBoundary()
+static NSString * GCGenerateBoundary();
+static NSString * GCURLEncodedString(NSString *string);
+static inline NSData * GCUTF8EncodedStringToData(NSString *string);
+
+@interface GCNetworkRequestMultiPartFormData : NSObject <GCMultiPartFormData>
+
+- (id)initWithNetworkRequest:(GCNetworkRequest *)request;
+- (void)finishMultiPartFormData;
+
+@end
+
+static NSString * const kGCMultiPartFormDataCRLF = @"\r\n";
+
+static NSString * GCGenerateBoundary()
 {
     CFUUIDRef uuid = CFUUIDCreate(kCFAllocatorDefault);
-    assert(uuid);
-    
     CFStringRef uuidStr = CFUUIDCreateString(kCFAllocatorDefault, uuid);
-    assert(uuidStr);
-    
-    NSString *result = (__bridge NSString *)uuidStr;
-    
-    CFRelease(uuidStr);
+    NSString *result = (__bridge_transfer NSString *)uuidStr;
     CFRelease(uuid);
-    
     return result;
+}
+
+static NSString * GCURLEncodedString(NSString *string)
+{
+	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(NULL,  (CFStringRef)string,  NULL,  CFSTR(":/.?&=;+!@$()~"),  kCFStringEncodingUTF8);
+}
+
+static inline NSData * GCUTF8EncodedStringToData(NSString *string)
+{
+    return [string dataUsingEncoding:NSUTF8StringEncoding];
 }
 
 @interface GCNetworkRequest ()
@@ -58,32 +74,144 @@ static NSString * GenerateBoundary()
 @implementation GCNetworkRequest
 {
     NSMutableDictionary *_dataDict;
-    NSString *_boundary;
 }
 
 + (id)requestWithURLString:(NSString *)url
 {
-    return [[[self class] alloc] initWithURLString:url HTTPMethod:nil parameters:nil];
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:nil parameters:nil encoding:0 multiPartFormDataHandler:nil];
 }
 
-+ (id)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSMutableDictionary *)body
++ (id)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
 {
-    return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:body];
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:0 multiPartFormDataHandler:nil];
 }
 
-- (id)initWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSMutableDictionary *)body
++ (id)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
+{
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:encoding multiPartFormDataHandler:nil];
+}
+
++ (id)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
+{
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:@"POST" parameters:parameters encoding:0 multiPartFormDataHandler:block];
+}
+
+- (id)initWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
 {
     self = [super initWithURL:[NSURL URLWithString:url]];
     if (self)
     {
         assert(url);
         
-        if (!method) method = @"GET";
+        if (!method && !block) method = @"GET";
+        else if (block) method = @"POST";
         [self setHTTPMethod:method];
         
-        if (body) [self setAllHTTPHeaderFields:body];
+        if (!block)
+        {
+            if ([method isEqualToString:@"GET"] || [method isEqualToString:@"HEAD"]) [self setHTTPShouldUsePipelining:YES];
+            
+            if (parameters)
+            {
+                if ([method isEqualToString:@"GET"] || [method isEqualToString:@"HEAD"] || [method isEqualToString:@"DELETE"])
+                {
+                    [self addQueryStringToURLWithURLString:url parameters:parameters];
+                }
+                else
+                {
+                    switch (encoding)
+                    {
+                        case GCParameterEncodingURL:
+                            [self URLEncodingFromParameters:parameters];
+                            break;
+                        case GCParameterEncodingJSON:
+                            [self JSONEncodingFromParameters:parameters];
+                            break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            GCNetworkRequestMultiPartFormData *multiPartFormData = [[GCNetworkRequestMultiPartFormData alloc] initWithNetworkRequest:self];
+            
+            if (parameters)
+            {
+                [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+                    
+                    NSData *data = nil;
+                    
+                    if ([value isKindOfClass:[NSData class]])
+                    {
+                        data = value;
+                    }
+                    else
+                    {
+                        data = GCUTF8EncodedStringToData([value description]);
+                    }
+                    
+                    [multiPartFormData addData:data name:[key description]];
+                }];
+            }
+            
+            block(multiPartFormData);
+            
+            [multiPartFormData finishMultiPartFormData];
+        }
     }
     return self;
+}
+
+- (NSString *)queryStringFromParameters:(NSDictionary *)parameters
+{
+    NSMutableString *string = [@"" mutableCopy];
+    
+    [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+        
+        if ([value isKindOfClass:[NSString class]])
+        {
+            [string appendFormat:@"%@=%@&", GCURLEncodedString(key), GCURLEncodedString((NSString *)value)];
+        }
+        else
+        {
+            [string appendFormat:@"%@=%@&", GCURLEncodedString(key), value];
+        }
+    }];
+    
+    if ([string length] > 0) [string deleteCharactersInRange:NSMakeRange([string length]-1, 1)];
+    
+    return string;
+}
+
+- (void)URLEncodingFromParameters:(NSDictionary *)parameters
+{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), ^{
+        
+        [self setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+        NSData *urlEncodedData = GCUTF8EncodedStringToData([self queryStringFromParameters:parameters]);
+        if (!urlEncodedData) GCNRLog(@"Error: Encoding query URL parameters failed");
+        [self setHTTPBody:urlEncodedData];
+    });
+}
+
+- (void)JSONEncodingFromParameters:(NSDictionary *)parameters
+{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), ^{
+        
+        [self setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+        NSData *jsonData = [self dataFromJSON:parameters];
+        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        [self setHTTPBody:GCUTF8EncodedStringToData(jsonString)];
+    });
+}
+
+- (void)addQueryStringToURLWithURLString:(NSString *)url parameters:(NSDictionary *)parameters
+{
+    NSURL *convertedURL = [NSURL URLWithString:url];
+    NSString *absoluteString = [convertedURL absoluteString];
+    NSString *stringURL = [absoluteString stringByAppendingFormat:[url rangeOfString:@"?"].location == NSNotFound ? @"?%@" : @"&%@", [self queryStringFromParameters:parameters]];
+    NSURL *encodedURL = [NSURL URLWithString:stringURL];
+    [self setURL:encodedURL];
 }
 
 - (void)addValue:(NSString *)value forHeaderField:(NSString *)field
@@ -94,85 +222,149 @@ static NSString * GenerateBoundary()
 - (void)setUsername:(NSString *)username password:(NSString *)password
 {
     NSDictionary *userInfo = @{_userinfo_keys.keys.username : username, _userinfo_keys.keys.password : password};
-    
     [NSURLProtocol setProperty:userInfo forKey:_userinfo_keys.userinfo_key inRequest:self];
 }
 
-- (NSData *)dataForPOSTWithDictionary:(NSDictionary *)dict
+- (NSData *)dataFromJSON:(id)json
 {
-    NSArray *allDictKeys = [dict allKeys];
-    NSMutableData *postData = [NSMutableData dataWithCapacity:1];
+    if (![NSJSONSerialization isValidJSONObject:json]) GCNRLog(@"Error: JSONObject not valid");
     
-    NSString *boundary = [NSString stringWithFormat:@"--%@\r\n", self->_boundary];
+    NSError *error = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:json options:0 error:&error];
     
-    [allDictKeys enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+    if (!jsonData) GCNRLog(@"Error: %@", [error userInfo]);
+    
+    return jsonData;
+}
+
+- (void)requestShouldUseHTTPPipelining:(BOOL)shouldUsePipelining
+{
+    if ([[self HTTPMethod] isEqualToString:@"POST"])
+    {
+        GCNRLog(@"Error: POST requests should not be pipelined");
+        return;
+    }
+    
+    [self setHTTPShouldUsePipelining:shouldUsePipelining];
+}
+
+- (void)setTimeoutIntervalInSeconds:(NSTimeInterval)seconds
+{
+    [self setTimeoutInterval:seconds];
+}
+
+@end
+
+@interface GCNetworkRequestMultiPartFormData ()
+
+@end
+
+@implementation GCNetworkRequestMultiPartFormData
+{
+    GCNetworkRequest *_request;
+    NSOutputStream *_oStream;
+    NSString *_boundary;
+}
+
+- (id)initWithNetworkRequest:(GCNetworkRequest *)request
+{
+    self = [super init];
+    if (self)
+    {
+        self->_request = request;
         
-        @autoreleasepool {
-            
-            NSString *dictKey = (NSString *)obj;
-            id dataValue = dict[dictKey];
-            
-            [postData appendData:[boundary dataUsingEncoding:NSUTF8StringEncoding]];
-            
-            if ([dataValue isKindOfClass:[NSString class]])
-            {
-                [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", dictKey] dataUsingEncoding:NSUTF8StringEncoding]];
-                [postData appendData:[[NSString stringWithFormat:@"%@", dataValue] dataUsingEncoding:NSUTF8StringEncoding]];
-            }
-            else if (([dataValue isKindOfClass:[NSURL class]]) && ([dataValue isFileURL]))
-            {
-                [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", dictKey, [[dataValue path] lastPathComponent]] dataUsingEncoding:NSUTF8StringEncoding]];
-                [postData appendData:[@"Content-Type: application/octet-stream\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
-                [postData appendData:[NSData dataWithContentsOfFile:[dataValue path]]];
-            }
-            else if (([dataValue isKindOfClass:[NSData class]]))
-            {
-                [postData appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", dictKey, allDictKeys[idx]] dataUsingEncoding:NSUTF8StringEncoding]];
-                [postData appendData:[@"Content-Type: application/octet-stream\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
-                [postData appendData:dataValue];
-            }
-            
-            [postData appendData:[@"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
-        }
+        self->_boundary = GCGenerateBoundary();
+        
+        self->_oStream = [[NSOutputStream alloc] initToMemory];
+        [self->_oStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+        [self->_oStream open];
+    }
+    return self;
+}
+
+- (void)finishMultiPartFormData
+{
+    if ([[self->_oStream propertyForKey:NSStreamFileCurrentOffsetKey] integerValue] == 0)
+    {
+        [self->_oStream close];
+        return;
+    }
+    
+    [self addStringData:[NSString stringWithFormat:@"--%@--%@", self->_boundary, kGCMultiPartFormDataCRLF]];
+    
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", GCGenerateBoundary()];
+    [self->_request setValue:contentType forHTTPHeaderField:@"Content-Type"];
+    
+    NSString *contentLength = [[self->_oStream propertyForKey:NSStreamFileCurrentOffsetKey] stringValue];
+     [self->_request setValue:contentLength forHTTPHeaderField:@"Content-Length"];
+    
+    NSData *finalData = [self->_oStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
+    [self->_request setHTTPBodyStream:[NSInputStream inputStreamWithData:finalData]];
+    
+    [self cleanupStream:self->_oStream];
+}
+
+- (void)cleanupStream:(NSStream *)stream
+{
+    assert(stream);
+    
+    [stream close];
+    [stream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    stream = nil;
+}
+
+- (void)addData:(NSData *)data
+{
+    if ([self->_oStream hasSpaceAvailable])
+    {
+        const uint8_t *buffer = (uint8_t *)[data bytes];
+        [self->_oStream write:&buffer[0] maxLength:[data length]];
+    }
+}
+
+- (void)addStringData:(NSString *)string
+{
+    [self addData:GCUTF8EncodedStringToData(string)];
+}
+
+- (void)generatePOSTMessage:(NSDictionary *)messageValues withBody:(NSData *)body
+{
+    [self addStringData:[NSString stringWithFormat:@"--%@%@", self->_boundary, kGCMultiPartFormDataCRLF]];
+    
+    [messageValues enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+       
+        [self addStringData:[NSString stringWithFormat:@"%@: %@%@", key, value, kGCMultiPartFormDataCRLF]];
     }];
     
-    [postData appendData:[[NSString stringWithFormat:@"--%@--\r\n", self->_boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+    [self addStringData:kGCMultiPartFormDataCRLF];
+    [self addData:body];
+    [self addStringData:kGCMultiPartFormDataCRLF];
+}
+
+- (void)addTextData:(NSString *)string name:(NSString *)name
+{
+    NSDictionary *message = @{@"Content-Disposition" : [NSString stringWithFormat:@"form-data; name=\"%@\"", name]};
+    NSData *body = GCUTF8EncodedStringToData([NSString stringWithFormat:@"%@", string]);
+    [self generatePOSTMessage:message withBody:body];
+}
+
+- (void)addData:(NSData *)data name:(NSString *)name filename:(NSString *)filename mimeType:(NSString *)mimeType
+{
+    if (!mimeType) mimeType = @"application/octet-stream";
     
-    return postData;
+    NSDictionary *message = @{@"Content-Disposition" : [NSString stringWithFormat:@"form-data; name=\"%@\"; filename=\"%@\"", name, filename], @"Content-Type" : [NSString stringWithFormat:@"%@", mimeType]};
+    [self generatePOSTMessage:message withBody:data];
 }
 
-- (NSMutableDictionary *)dataDict
+- (void)addData:(NSData *)data name:(NSString *)name
 {
-    return self->_dataDict ?: (self->_dataDict = [@{} mutableCopy]);
+    [self addData:data name:name filename:name mimeType:nil];
 }
 
-- (void)addBodyData
-{
-    [self setHTTPMethod:@"POST"];
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), ^{
-        
-        self->_boundary = GenerateBoundary();
-        
-        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", self->_boundary];
-        [self addValue:contentType forHTTPHeaderField:@"Content-Type"];
-        
-        NSData *bodyData = [self dataForPOSTWithDictionary:[self dataDict]];
-        [self setHTTPBody:bodyData];
-    });
-}
-
-- (void)addData:(NSData *)data forKey:(NSString *)key
-{
-    [self dataDict][key] = data;
-    
-    [self addBodyData];
-}
-
-- (void)addFileWithPath:(NSString *)file forKey:(NSString *)key
-{
+- (void)addFileFromPath:(NSString *)filePath name:(NSString *)name mimeType:(NSString *)mimeType
+{    
     NSError *error = nil;
-    NSData *fileData = [NSData dataWithContentsOfFile:file options:NSDataReadingMappedIfSafe error:&error];
+    NSData *fileData = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
     
     if (!fileData)
     {
@@ -180,17 +372,12 @@ static NSString * GenerateBoundary()
         return;
     }
     
-    [self addData:fileData forKey:key];
+    [self addData:fileData name:name filename:[filePath lastPathComponent] mimeType:mimeType];
 }
 
-- (void)requestShouldUseHTTPPipelining:(BOOL)shouldUsePipelining
+- (void)addFileFromPath:(NSString *)filePath name:(NSString *)name
 {
-    [self setHTTPShouldUsePipelining:shouldUsePipelining];
-}
-
-- (void)setTimeoutIntervalInSeconds:(NSTimeInterval)seconds
-{
-    [self setTimeoutInterval:seconds];
+    [self addFileFromPath:filePath name:name mimeType:nil];
 }
 
 @end
