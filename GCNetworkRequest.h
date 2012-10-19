@@ -73,7 +73,7 @@ typedef enum : unsigned char
 @protocol GCMultiPartFormData <NSObject>
 
 - (void)addTextData:(NSString *)string
-                 name:(NSString *)name;
+               name:(NSString *)name;
 
 - (void)addData:(NSData *)data
            name:(NSString *)name;

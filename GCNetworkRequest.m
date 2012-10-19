@@ -296,7 +296,7 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
     [self->_request setValue:contentType forHTTPHeaderField:@"Content-Type"];
     
     NSString *contentLength = [[self->_oStream propertyForKey:NSStreamFileCurrentOffsetKey] stringValue];
-     [self->_request setValue:contentLength forHTTPHeaderField:@"Content-Length"];
+    [self->_request setValue:contentLength forHTTPHeaderField:@"Content-Length"];
     
     NSData *finalData = [self->_oStream propertyForKey:NSStreamDataWrittenToMemoryStreamKey];
     [self->_request setHTTPBodyStream:[NSInputStream inputStreamWithData:finalData]];
@@ -332,7 +332,7 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
     [self addStringData:[NSString stringWithFormat:@"--%@%@", self->_boundary, kGCMultiPartFormDataCRLF]];
     
     [messageValues enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-       
+        
         [self addStringData:[NSString stringWithFormat:@"%@: %@%@", key, value, kGCMultiPartFormDataCRLF]];
     }];
     
@@ -362,7 +362,7 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 }
 
 - (void)addFileFromPath:(NSString *)filePath name:(NSString *)name mimeType:(NSString *)mimeType
-{    
+{
     NSError *error = nil;
     NSData *fileData = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
     
