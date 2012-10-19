@@ -1,4 +1,4 @@
-GCNetworkRequest (Beta, API not final)
+GCNetworkRequest
 ================
 
 An easy-to-use asynchronous HTTP networking library for iOS and OS X.
@@ -79,6 +79,7 @@ A network request can be cancelled at any time.
 #### HTTP Pipelining
 
 HTTP pipelining is a technique in which multiple HTTP requests are sent on a single TCP connection without waiting for the corresponding responses. If your web server supports this, you can enable it via this method.
+GET and HEAD requests are always pipelined. Please note that POST requests should not be pipelined.
 
 ```
 [request requestShouldUseHTTPPipelining:YES];
@@ -92,9 +93,8 @@ Todo
 
 The library is still in beta.
 
-* Add parameter encoding.
-* Improve multipart/form-data file upload (multiple files).
-* Many more features to come, including asynchronous image loading.
+* Make private class `GCMultiPartFormData` to handle file streams concurrently.
+* Include asynchronous image loading class.
 
 License
 -------
