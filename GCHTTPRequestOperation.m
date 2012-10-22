@@ -6,33 +6,39 @@
 //  Copyright (c) 2012 Glenn Chiu. All rights reserved.
 //
 
-// This code is distributed under the terms and conditions of the MIT license.
+//  This code is distributed under the terms and conditions of the MIT license.
 
-// Copyright (c) 2012 Glenn Chiu
+//  Copyright (c) 2012 Glenn Chiu
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//  THE SOFTWARE.
 
 #import "GCHTTPRequestOperation.h"
 #import "GCNetworkRequest.h"
 
 #if ! __has_feature(objc_arc)
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
+#endif
+
+#ifdef DEBUG
+#   define GCNRLog(fmt, ...) NSLog((@"%s [Line %d]\n" fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#else
+#   define GCNRLog(...) do {} while(0)
 #endif
 
 #if TARGET_OS_IPHONE
@@ -103,7 +109,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     void(^_uploadProgressBlock)(NSUInteger bytesWritten, NSUInteger totalBytesWritten, NSUInteger totalBytesExpectedToWrite);
 }
 
-+ (id)HTTPRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock
++ (GCHTTPRequestOperation *)HTTPRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock
 {
     return [[self alloc] initWithHTTPRequest:networkRequest callBackQueue:queue completionHandler:completionBlock errorHandler:errorBlock];
 }
@@ -160,6 +166,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     static dispatch_once_t oncePredicate = (dispatch_once_t)0;
     
     dispatch_once(&oncePredicate, ^{
+        
         workerThread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain:) object:nil];
         [workerThread start];
     });
