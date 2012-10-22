@@ -21,11 +21,11 @@ GCNetworkRequest requires iOS 5.0 and above or OS X 10.7 and above. It also requ
 Installation
 ------------
 
-Clone the repository and add all files to your Xcode project. Check if the files show up in the 'compile sources' section of your target. Otherwise, assign the target to the files manually.
-
-The global header to include all source files is `GCNetworkRequest.h`
+Clone the repository and add the files you need to your Xcode project. Check if the files show up in the 'compile sources' section of your target. Otherwise, assign the target to the files manually.
 
 If you use the library in a non-ARC project, make sure you add the `-fobjc-arc` compiler flag for all implementation files.
+
+This library was designed to be modular. The minimum required classes you need, in order to use this library properly, are `GCHTTPRequestOperation` and `GCNetworkRequest`.
 
 Classes
 -------
@@ -48,6 +48,8 @@ Usage
 #### JSON Request
 
 The **callbackQueue** parameter determines in which GCD queue the completion and error handlers gets called. When you pass in `nil` or `NULL` the block will be called on the main thread. When you want to perform a long task in the completion handler, it's better to insert a concurrent dispatch queue. This way it won't block the main thread and it keeps the app responsive.
+
+If your application syncs data with a webservice, it's highly likely that it involves several serial HTTP requests. The API was designed to be inserted inline into a (private) GCD queue or added on a `NSOperationQueue`.
 
 ```
 GCNetworkRequest *request = [GCNetworkRequest requestWithURLString:@"http://maps.googleapis.com/maps/api/geocode/json?address=Amsterdam,+Nederland&sensor=true"];
@@ -86,14 +88,11 @@ GET and HEAD requests are always pipelined. Please note that POST requests shoul
 ```
 #### Start Network Operation
 
-There are two ways in which you can start a network operation. For a single operation you can call the `-startRequest:` method. If you have multiple operation scheduled, then you can use the `GCNetworkQueue` class to add operations on a single queue. A network queue allows you to control the maximum amount of concurrent connections. For iOS it's best to keep it at a max of two or three connections on a cellular connection.
+There are two ways in which you can start a network operation. For a single operation you can call the `-startRequest:` method. If you have multiple operation scheduled, then you can use the `GCNetworkQueue` class to add operations on a single queue. A network queue allows you to control the maximum amount of concurrent connections.
 
 Todo
 ----
 
-The library is still in beta.
-
-* Make private class `GCMultiPartFormData` to handle file streams concurrently.
 * Include asynchronous image loading class.
 
 License
