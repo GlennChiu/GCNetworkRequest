@@ -6,27 +6,27 @@
 //  Copyright (c) 2012 Dot Square. All rights reserved.
 //
 
-// This code is distributed under the terms and conditions of the MIT license.
+//  This code is distributed under the terms and conditions of the MIT license.
 
-// Copyright (c) 2012 Glenn Chiu
+//  Copyright (c) 2012 Glenn Chiu
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//  THE SOFTWARE.
 
 #import "GCNetworkRequest.h"
 #import "GCHTTPRequestOperation.h"
@@ -35,8 +35,14 @@
 #error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
+#ifdef DEBUG
+#   define GCNRLog(fmt, ...) NSLog((@"%s [Line %d]\n" fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#else
+#   define GCNRLog(...) do {} while(0)
+#endif
+
 static NSString * GCGenerateBoundary();
-static NSString * GCURLEncodedString(NSString *string);
+static inline NSString * GCURLEncodedString(NSString *string);
 static inline NSData * GCUTF8EncodedStringToData(NSString *string);
 
 @interface GCNetworkRequestMultiPartFormData : NSObject <GCMultiPartFormData>
@@ -57,7 +63,7 @@ static NSString * GCGenerateBoundary()
     return result;
 }
 
-static NSString * GCURLEncodedString(NSString *string)
+static inline NSString * GCURLEncodedString(NSString *string)
 {
 	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(NULL,  (CFStringRef)string,  NULL,  CFSTR(":/.?&=;+!@$()~"),  kCFStringEncodingUTF8);
 }
@@ -72,26 +78,23 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 @end
 
 @implementation GCNetworkRequest
-{
-    NSMutableDictionary *_dataDict;
-}
 
-+ (id)requestWithURLString:(NSString *)url
++ (GCNetworkRequest *)requestWithURLString:(NSString *)url
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:nil parameters:nil encoding:0 multiPartFormDataHandler:nil];
 }
 
-+ (id)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
++ (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:0 multiPartFormDataHandler:nil];
 }
 
-+ (id)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
++ (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:encoding multiPartFormDataHandler:nil];
 }
 
-+ (id)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
++ (GCNetworkRequest *)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:@"POST" parameters:parameters encoding:0 multiPartFormDataHandler:block];
 }
@@ -133,30 +136,29 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
         }
         else
         {
-            GCNetworkRequestMultiPartFormData *multiPartFormData = [[GCNetworkRequestMultiPartFormData alloc] initWithNetworkRequest:self];
+            __block void(^multipart_blk)(id <GCMultiPartFormData>) = [block copy];
             
-            if (parameters)
-            {
-                [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-                    
-                    NSData *data = nil;
-                    
-                    if ([value isKindOfClass:[NSData class]])
-                    {
-                        data = value;
-                    }
-                    else
-                    {
-                        data = GCUTF8EncodedStringToData([value description]);
-                    }
-                    
-                    [multiPartFormData addData:data name:[key description]];
-                }];
-            }
+            dispatch_block_t blk = ^{
+                
+                GCNetworkRequestMultiPartFormData *multiPartFormData = [[GCNetworkRequestMultiPartFormData alloc] initWithNetworkRequest:self];
+                
+                if (parameters)
+                {
+                    [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+                        
+                        NSData *data = ([value isKindOfClass:[NSData class]]) ? value : GCUTF8EncodedStringToData([value description]);
+                        [multiPartFormData addData:data name:[key description]];
+                    }];
+                }
+                
+                multipart_blk(multiPartFormData);
+                
+                [multiPartFormData finishMultiPartFormData];
+                
+                multipart_blk = nil;
+            };
             
-            block(multiPartFormData);
-            
-            [multiPartFormData finishMultiPartFormData];
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), blk);
         }
     }
     return self;
@@ -185,24 +187,28 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 
 - (void)URLEncodingFromParameters:(NSDictionary *)parameters
 {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), ^{
+    dispatch_block_t block = ^{
         
         [self setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
         NSData *urlEncodedData = GCUTF8EncodedStringToData([self queryStringFromParameters:parameters]);
         if (!urlEncodedData) GCNRLog(@"Error: Encoding query URL parameters failed");
         [self setHTTPBody:urlEncodedData];
-    });
+    };
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
 }
 
 - (void)JSONEncodingFromParameters:(NSDictionary *)parameters
 {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), ^{
+    dispatch_block_t block = ^{
         
         [self setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
         NSData *jsonData = [self dataFromJSON:parameters];
         NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
         [self setHTTPBody:GCUTF8EncodedStringToData(jsonString)];
-    });
+    };
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
 }
 
 - (void)addQueryStringToURLWithURLString:(NSString *)url parameters:(NSDictionary *)parameters
@@ -214,9 +220,9 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
     [self setURL:encodedURL];
 }
 
-- (void)addValue:(NSString *)value forHeaderField:(NSString *)field
+- (void)setValue:(NSString *)value forHeaderField:(NSString *)field
 {
-    [self addValue:value forHTTPHeaderField:field];
+    [self setValue:value forHTTPHeaderField:field];
 }
 
 - (void)setUsername:(NSString *)username password:(NSString *)password
@@ -286,7 +292,7 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 {
     if ([[self->_oStream propertyForKey:NSStreamFileCurrentOffsetKey] integerValue] == 0)
     {
-        [self->_oStream close];
+        [self cleanupStream:self->_oStream];
         return;
     }
     
