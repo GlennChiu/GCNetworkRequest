@@ -103,10 +103,10 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     
     GCOperationState _operationState;
     
-    void(^_completion_block)(NSData *data, NSHTTPURLResponse *response);
-    void(^_error_block)(NSData *data, NSHTTPURLResponse *response, NSError *error);
-    void(^_downloadProgressBlock)(NSUInteger bytesRead, NSUInteger totalBytesRead, NSUInteger totalBytesExpectedToRead);
-    void(^_uploadProgressBlock)(NSUInteger bytesWritten, NSUInteger totalBytesWritten, NSUInteger totalBytesExpectedToWrite);
+    void(^_completion_block)(NSData *, NSHTTPURLResponse *);
+    void(^_error_block)(NSData *, NSHTTPURLResponse *, NSError *);
+    void(^_downloadProgressBlock)(NSUInteger, NSUInteger, NSUInteger);
+    void(^_uploadProgressBlock)(NSUInteger, NSUInteger, NSUInteger);
 }
 
 + (GCHTTPRequestOperation *)HTTPRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock
