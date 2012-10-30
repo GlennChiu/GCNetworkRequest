@@ -52,7 +52,7 @@ The **callbackQueue** parameter determines in which GCD queue the completion and
 
 If your application syncs data with a web-service, it's highly likely that it involves several serial HTTP requests. The API was designed to be inserted inline into a (private) GCD queue or added on a `NSOperationQueue`.
 
-```
+```objectivec
 GCNetworkRequest *request = [GCNetworkRequest requestWithURLString:@"http://maps.googleapis.com/maps/api/geocode/json?address=Amsterdam,+Nederland&sensor=true"];
         
 GCJSONRequestOperation *operation = [GCJSONRequestOperation JSONRequest:request
@@ -70,7 +70,7 @@ GCJSONRequestOperation *operation = [GCJSONRequestOperation JSONRequest:request
 
 File upload is done using multipart/form-data POST requests. The data can be added to the body by using the `multiPartFormDataHandler` block. It contains a `formData` object which allows you to add and specify the data needed for upload.
 
-```
+```objectivec
 NSData *imageData = UIImagePNGRepresentation([UIImage imageNamed:@"thumbnail.png"]);
 
 GCNetworkRequest *request = [GCNetworkRequest requestWithURLString:@"http://www.someurl.com/upload"
@@ -88,12 +88,12 @@ GCHTTPRequestOperation *operation = [GCHTTPRequestOperation HTTPRequest:request 
 
 A network request can be cancelled at any time.
 
-```
+```objectivec
 [operation cancelRequest];
 ```
 #### Track Download Progress
 
-```
+```objectivec
 [operation downloadProgressHandler:^(NSUInteger bytesRead, NSUInteger totalBytesRead, NSUInteger totalBytesExpectedToRead) {
 	// This handler gets a continuous callback and the parameters can be used to track the progress 
 }];
@@ -103,7 +103,7 @@ A network request can be cancelled at any time.
 HTTP pipelining is a technique in which multiple HTTP requests are sent on a single TCP connection without waiting for the corresponding responses. If your web server supports this, you can enable it via this method.
 GET and HEAD requests are always pipelined. Please note that POST requests should not be pipelined.
 
-```
+```objectivec
 [request requestShouldUseHTTPPipelining:YES];
 ```
 #### Start Network Operation
