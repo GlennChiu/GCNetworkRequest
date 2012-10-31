@@ -70,6 +70,9 @@ typedef enum : unsigned char
 
 @protocol GCMultiPartFormData <NSObject>
 
+- (void)addTextData:(NSString *)string
+               name:(NSString *)name;
+
 - (void)addData:(NSData *)data
            name:(NSString *)name;
 
@@ -84,8 +87,5 @@ typedef enum : unsigned char
 - (void)addFileFromPath:(NSString *)filePath
                    name:(NSString *)name
                mimeType:(NSString *)mimeType;
-
-- (void)addTextData:(NSString *)string
-               name:(NSString *)name;
 
 @end

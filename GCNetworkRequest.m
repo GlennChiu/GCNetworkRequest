@@ -81,12 +81,12 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 
 + (GCNetworkRequest *)requestWithURLString:(NSString *)url
 {
-    return [[[self class] alloc] initWithURLString:url HTTPMethod:nil parameters:nil encoding:0 multiPartFormDataHandler:nil];
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:@"GET" parameters:nil encoding:GCParameterEncodingURL multiPartFormDataHandler:nil];
 }
 
 + (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
 {
-    return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:0 multiPartFormDataHandler:nil];
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:GCParameterEncodingURL multiPartFormDataHandler:nil];
 }
 
 + (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
@@ -96,7 +96,7 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 
 + (GCNetworkRequest *)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
 {
-    return [[[self class] alloc] initWithURLString:url HTTPMethod:@"POST" parameters:parameters encoding:0 multiPartFormDataHandler:block];
+    return [[[self class] alloc] initWithURLString:url HTTPMethod:@"POST" parameters:parameters encoding:GCParameterEncodingURL multiPartFormDataHandler:block];
 }
 
 - (id)initWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
@@ -136,29 +136,20 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
         }
         else
         {
-            __block void(^multipart_blk)(id <GCMultiPartFormData>) = [block copy];
+            GCNetworkRequestMultiPartFormData *multiPartFormData = [[GCNetworkRequestMultiPartFormData alloc] initWithNetworkRequest:self];
             
-            dispatch_block_t blk = ^{
-                
-                GCNetworkRequestMultiPartFormData *multiPartFormData = [[GCNetworkRequestMultiPartFormData alloc] initWithNetworkRequest:self];
-                
-                if (parameters)
-                {
-                    [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-                        
-                        NSData *data = ([value isKindOfClass:[NSData class]]) ? value : GCUTF8EncodedStringToData([value description]);
-                        [multiPartFormData addData:data name:[key description]];
-                    }];
-                }
-                
-                multipart_blk(multiPartFormData);
-                
-                [multiPartFormData finishMultiPartFormData];
-                
-                multipart_blk = nil;
-            };
+            if (parameters)
+            {
+                [parameters enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+                    
+                    NSData *data = ([value isKindOfClass:[NSData class]]) ? value : GCUTF8EncodedStringToData([value description]);
+                    [multiPartFormData addData:data name:[key description]];
+                }];
+            }
             
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), blk);
+            block(multiPartFormData);
+            
+            [multiPartFormData finishMultiPartFormData];
         }
     }
     return self;
@@ -187,28 +178,18 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 
 - (void)URLEncodingFromParameters:(NSDictionary *)parameters
 {
-    dispatch_block_t block = ^{
-        
-        [self setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
-        NSData *urlEncodedData = GCUTF8EncodedStringToData([self queryStringFromParameters:parameters]);
-        if (!urlEncodedData) GCNRLog(@"Error: Encoding query URL parameters failed");
-        [self setHTTPBody:urlEncodedData];
-    };
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+    [self setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+    NSData *urlEncodedData = GCUTF8EncodedStringToData([self queryStringFromParameters:parameters]);
+    if (!urlEncodedData) GCNRLog(@"Error: Encoding query URL parameters failed");
+    [self setHTTPBody:urlEncodedData];
 }
 
 - (void)JSONEncodingFromParameters:(NSDictionary *)parameters
 {
-    dispatch_block_t block = ^{
-        
-        [self setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-        NSData *jsonData = [self dataFromJSON:parameters];
-        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-        [self setHTTPBody:GCUTF8EncodedStringToData(jsonString)];
-    };
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+    [self setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    NSData *jsonData = [self dataFromJSON:parameters];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    [self setHTTPBody:GCUTF8EncodedStringToData(jsonString)];
 }
 
 - (void)addQueryStringToURLWithURLString:(NSString *)url parameters:(NSDictionary *)parameters
