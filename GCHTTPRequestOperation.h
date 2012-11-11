@@ -75,4 +75,4 @@ extern const struct _userinfo_keys {
     } keys;
 } _userinfo_keys;
 
-extern inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue);
+extern dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue);

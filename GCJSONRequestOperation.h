@@ -30,8 +30,6 @@
 
 #import "GCHTTPRequestOperation.h"
 
-@class GCNetworkRequest;
-
 @interface GCJSONRequestOperation : GCHTTPRequestOperation
 
 + (GCJSONRequestOperation *)JSONRequest:(GCNetworkRequest *)networkRequest
