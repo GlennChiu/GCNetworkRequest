@@ -42,38 +42,28 @@
     __block GCImageRequestOperation *operation = nil;
     
     operation = [[GCImageRequestOperation alloc] initWithHTTPRequest:networkRequest
-                                                       callBackQueue:queue
+                                                       callBackQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul)
                                                    completionHandler:^(NSData *data, NSHTTPURLResponse *response) {
                                                        
                                                        if (completionBlock)
                                                        {
-                                                           dispatch_block_t block = ^{
-                                                               
-                                                               UIImage *image = [UIImage imageWithData:data];
-                                                               
-                                                               dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(image, response);});
-                                                               
-                                                               operation = nil;
-                                                           };
+                                                           UIImage *image = [UIImage imageWithData:data];
                                                            
-                                                           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                           dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(image, response);});
                                                        };
+                                                       
+                                                       operation = nil;
                                                        
                                                    } errorHandler:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
                                                        
                                                        if (errorBlock)
                                                        {
-                                                           dispatch_block_t block = ^{
-                                                               
-                                                               UIImage *image = [UIImage imageWithData:data];
-                                                               
-                                                               dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(image, response, error);});
-                                                               
-                                                               operation = nil;
-                                                           };
+                                                           UIImage *image = [UIImage imageWithData:data];
                                                            
-                                                           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                           dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(image, response, error);});
                                                        };
+                                                       
+                                                       operation = nil;
                                                    }];
     return operation;
 }
@@ -85,38 +75,28 @@
     __block GCImageRequestOperation *operation = nil;
     
     operation = [[GCImageRequestOperation alloc] initWithHTTPRequest:networkRequest
-                                                       callBackQueue:queue
+                                                       callBackQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul)
                                                    completionHandler:^(NSData *data, NSHTTPURLResponse *response) {
                                                        
                                                        if (completionBlock)
                                                        {
-                                                           dispatch_block_t block = ^{
-                                                               
-                                                               NSImage *image = [[NSImage alloc] initWithData:data];
-                                                               
-                                                               dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(image, response);});
-                                                               
-                                                               operation = nil;
-                                                           };
+                                                           NSImage *image = [[NSImage alloc] initWithData:data];
                                                            
-                                                           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                           dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(image, response);});
                                                        };
+                                                       
+                                                       operation = nil;
                                                        
                                                    } errorHandler:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
                                                        
                                                        if (errorBlock)
                                                        {
-                                                           dispatch_block_t block = ^{
-                                                               
-                                                               NSImage *image = [[NSImage alloc] initWithData:data];
-                                                               
-                                                               dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(image, response, error);});
-                                                               
-                                                               operation = nil;
-                                                           };
+                                                           NSImage *image = [[NSImage alloc] initWithData:data];
                                                            
-                                                           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                           dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(image, response, error);});
                                                        };
+                                                       
+                                                       operation = nil;
                                                    }];
     return operation;
 }

@@ -45,38 +45,28 @@
     __block GCXMLRequestOperation *operation = nil;
     
     operation = [[GCXMLRequestOperation alloc] initWithHTTPRequest:networkRequest
-                                                     callBackQueue:queue
+                                                     callBackQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul)
                                                  completionHandler:^(NSData *data, NSHTTPURLResponse *response) {
                                                      
                                                      if (completionBlock)
                                                      {
-                                                         dispatch_block_t block = ^{
-                                                             
-                                                             NSXMLParser *parser = [operation XMLParserFromData:data];
-                                                             
-                                                             dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(parser, response);});
-                                                             
-                                                             operation = nil;
-                                                         };
+                                                         NSXMLParser *parser = [operation XMLParserFromData:data];
                                                          
-                                                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                         dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(parser, response);});
                                                      }
+                                                     
+                                                     operation = nil;
                                                      
                                                  } errorHandler:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
                                                      
                                                      if (errorBlock)
                                                      {
-                                                         dispatch_block_t block = ^{
-                                                             
-                                                             NSXMLParser *parser = [operation XMLParserFromData:data];
-                                                             
-                                                             dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(parser, response, error);});
-                                                             
-                                                             operation = nil;
-                                                         };
+                                                         NSXMLParser *parser = [operation XMLParserFromData:data];
                                                          
-                                                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                         dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(parser, response, error);});
                                                      }
+                                                     
+                                                     operation = nil;
                                                  }];
     return operation;
 }
@@ -93,38 +83,28 @@
     __block GCXMLRequestOperation *operation = nil;
     
     operation = [[GCXMLRequestOperation alloc] initWithHTTPRequest:networkRequest
-                                                     callBackQueue:queue
+                                                     callBackQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul)
                                                  completionHandler:^(NSData *data, NSHTTPURLResponse *response) {
                                                      
                                                      if (completionBlock)
                                                      {
-                                                         dispatch_block_t block = ^{
-                                                             
-                                                             NSXMLDocument *document = [operation XMLDocumentFromData:data];
-                                                             
-                                                             dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(document, response);});
-                                                             
-                                                             operation = nil;
-                                                         };
+                                                         NSXMLDocument *document = [operation XMLDocumentFromData:data];
                                                          
-                                                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                         dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(document, response);});
                                                      }
+                                                     
+                                                     operation = nil;
                                                      
                                                  } errorHandler:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
                                                      
                                                      if (errorBlock)
                                                      {
-                                                         dispatch_block_t block = ^{
-                                                             
-                                                             NSXMLDocument *document = [operation XMLDocumentFromData:data];
-                                                             
-                                                             dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(document, response, [operation error]);});
-                                                             
-                                                             operation = nil;
-                                                         };
+                                                         NSXMLDocument *document = [operation XMLDocumentFromData:data];
                                                          
-                                                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                         dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(document, response, [operation error]);});
                                                      }
+                                                     
+                                                     operation = nil;
                                                  }];
     return operation;
 }

@@ -44,38 +44,28 @@
     __block GCJSONRequestOperation *operation = nil;
     
     operation = [[GCJSONRequestOperation alloc] initWithHTTPRequest:networkRequest
-                                                      callBackQueue:queue
+                                                      callBackQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul)
                                                   completionHandler:^(NSData *data, NSHTTPURLResponse *response) {
                                                       
                                                       if (completionBlock)
                                                       {
-                                                          dispatch_block_t block = ^{
-                                                              
-                                                              id JSONObject = [operation processJSON:data];
-                                                              
-                                                              dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(JSONObject, response);});
-                                                              
-                                                              operation = nil;
-                                                          };
+                                                          id JSONObject = [operation processJSON:data];
                                                           
-                                                          dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                          dispatch_async(gc_dispatch_queue(queue), ^{completionBlock(JSONObject, response);});
                                                       }
+                                                      
+                                                      operation = nil;
                                                       
                                                   } errorHandler:^(NSData *data, NSHTTPURLResponse *response, NSError *error) {
                                                       
                                                       if (errorBlock)
                                                       {
-                                                          dispatch_block_t block = ^{
-                                                              
-                                                              id JSONObject = [operation processJSON:data];
-                                                              
-                                                              dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(JSONObject, response, [operation error]);});
-                                                              
-                                                              operation = nil;
-                                                          };
+                                                          id JSONObject = [operation processJSON:data];
                                                           
-                                                          dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul), block);
+                                                          dispatch_async(gc_dispatch_queue(queue), ^{errorBlock(JSONObject, response, [operation error]);});
                                                       }
+                                                      
+                                                      operation = nil;
                                                   }];
     return operation;
 }
