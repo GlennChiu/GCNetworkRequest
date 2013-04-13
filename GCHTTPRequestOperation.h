@@ -1,14 +1,7 @@
 //
-//  GCHTTPRequestOperation.h
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 05/09/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +23,17 @@
 
 #import <Foundation/Foundation.h>
 
+extern const struct _userinfo_keys {
+    __unsafe_unretained NSString *userinfo_key;
+    struct
+    {
+        __unsafe_unretained NSString *username;
+        __unsafe_unretained NSString *password;
+    } keys;
+} _userinfo_keys;
+
+extern dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue);
+
 @class GCNetworkRequest;
 
 @interface GCHTTPRequestOperation : NSOperation
@@ -40,10 +44,10 @@
 @property (strong, nonatomic) NSInputStream *inputStream;
 @property (strong, nonatomic) NSError *error;
 
-+ (GCHTTPRequestOperation *)HTTPRequest:(GCNetworkRequest *)networkRequest
-                          callBackQueue:(dispatch_queue_t)queue
-                      completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock
-                           errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock;
++ (instancetype)HTTPRequest:(GCNetworkRequest *)networkRequest
+              callBackQueue:(dispatch_queue_t)queue
+          completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock
+               errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock;
 
 - (id)initWithHTTPRequest:(GCNetworkRequest *)networkRequest
             callBackQueue:(dispatch_queue_t)queue
@@ -64,15 +68,3 @@
 #endif
 
 @end
-
-
-extern const struct _userinfo_keys {
-    __unsafe_unretained NSString *userinfo_key;
-    struct
-    {
-        __unsafe_unretained NSString *username;
-        __unsafe_unretained NSString *password;
-    } keys;
-} _userinfo_keys;
-
-extern dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue);

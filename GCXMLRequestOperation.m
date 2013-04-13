@@ -1,14 +1,7 @@
 //
-//  GCXMLRequestOperation.m
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 16/09/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +24,7 @@
 #import "GCXMLRequestOperation.h"
 
 #if ! __has_feature(objc_arc)
-#error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
+#   error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
 @implementation GCXMLRequestOperation
@@ -40,7 +33,7 @@
 }
 
 #if TARGET_OS_IPHONE
-+ (GCXMLRequestOperation *)XMLParserRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSXMLParser *parser, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSXMLParser *parser, NSHTTPURLResponse *response, NSError *error))errorBlock
++ (instancetype)XMLParserRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSXMLParser *parser, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSXMLParser *parser, NSHTTPURLResponse *response, NSError *error))errorBlock
 {
     __block GCXMLRequestOperation *operation = nil;
     
@@ -78,7 +71,7 @@
 #endif
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED
-+ (GCXMLRequestOperation *)XMLDocumentRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSXMLDocument *document, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSXMLDocument *document, NSHTTPURLResponse *response, NSError *error))errorBlock
++ (instancetype)XMLDocumentRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSXMLDocument *document, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSXMLDocument *document, NSHTTPURLResponse *response, NSError *error))errorBlock
 {
     __block GCXMLRequestOperation *operation = nil;
     
@@ -127,6 +120,11 @@
 - (NSError *)error
 {
     return (self->_XMLError) ?: [super error];
+}
+
+- (void)setError:(NSError *)error
+{
+    self->_XMLError = error;
 }
 
 @end

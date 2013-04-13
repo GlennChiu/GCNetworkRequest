@@ -1,14 +1,7 @@
 //
-//  GCImageRequestOperation.h
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 23/10/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -33,17 +26,17 @@
 @interface GCImageRequestOperation : GCHTTPRequestOperation
 
 #if TARGET_OS_IPHONE
-+ (GCImageRequestOperation *)imageRequest:(GCNetworkRequest *)networkRequest
-                            callBackQueue:(dispatch_queue_t)queue
-                        completionHandler:(void(^)(UIImage *image, NSHTTPURLResponse *response))completionBlock
-                             errorHandler:(void(^)(UIImage *image, NSHTTPURLResponse *response, NSError *error))errorBlock;
++ (instancetype)imageRequest:(GCNetworkRequest *)networkRequest
+               callBackQueue:(dispatch_queue_t)queue
+           completionHandler:(void(^)(UIImage *image, NSHTTPURLResponse *response))completionBlock
+                errorHandler:(void(^)(UIImage *image, NSHTTPURLResponse *response, NSError *error))errorBlock;
 #endif
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED
-+ (GCImageRequestOperation *)imageRequest:(GCNetworkRequest *)networkRequest
-                            callBackQueue:(dispatch_queue_t)queue
-                        completionHandler:(void(^)(NSImage *image, NSHTTPURLResponse *response))completionBlock
-                             errorHandler:(void(^)(NSImage *image, NSHTTPURLResponse *response, NSError *error))errorBlock;
++ (instancetype)imageRequest:(GCNetworkRequest *)networkRequest
+               callBackQueue:(dispatch_queue_t)queue
+           completionHandler:(void(^)(NSImage *image, NSHTTPURLResponse *response))completionBlock
+                errorHandler:(void(^)(NSImage *image, NSHTTPURLResponse *response, NSError *error))errorBlock;
 #endif
 
 @end

@@ -1,14 +1,7 @@
 //
-//  GCJSONRequestOperation.h
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 14/09/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +25,9 @@
 
 @interface GCJSONRequestOperation : GCHTTPRequestOperation
 
-+ (GCJSONRequestOperation *)JSONRequest:(GCNetworkRequest *)networkRequest
-                          callBackQueue:(dispatch_queue_t)queue
-                      completionHandler:(void(^)(id JSON, NSHTTPURLResponse *response))completionBlock
-                           errorHandler:(void(^)(id JSON, NSHTTPURLResponse *response, NSError *error))errorBlock;
++ (instancetype)JSONRequest:(GCNetworkRequest *)networkRequest
+              callBackQueue:(dispatch_queue_t)queue
+          completionHandler:(void(^)(id JSON, NSHTTPURLResponse *response))completionBlock
+               errorHandler:(void(^)(id JSON, NSHTTPURLResponse *response, NSError *error))errorBlock;
 
 @end

@@ -1,14 +1,7 @@
 //
-//  GCNetworkRequest.m
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 15-07-12.
-//  Copyright (c) 2012 Dot Square. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +25,7 @@
 #import "GCHTTPRequestOperation.h"
 
 #if ! __has_feature(objc_arc)
-#error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
+#   error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
 #ifdef DEBUG
@@ -65,7 +58,7 @@ static NSString * GCGenerateBoundary()
 
 static inline NSString * GCURLEncodedString(NSString *string)
 {
-	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(NULL,  (CFStringRef)string,  NULL,  CFSTR(":/.?&=;+!@$()~"),  kCFStringEncodingUTF8);
+	return (__bridge_transfer NSString *)CFURLCreateStringByAddingPercentEscapes(NULL,  (__bridge CFStringRef)string,  NULL,  CFSTR(":/.?&=;+!@$()~"),  kCFStringEncodingUTF8);
 }
 
 static inline NSData * GCUTF8EncodedStringToData(NSString *string)
@@ -79,22 +72,22 @@ static inline NSData * GCUTF8EncodedStringToData(NSString *string)
 
 @implementation GCNetworkRequest
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url
++ (instancetype)requestWithURLString:(NSString *)url
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:@"GET" parameters:nil encoding:GCParameterEncodingURL multiPartFormDataHandler:nil];
 }
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
++ (instancetype)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:GCParameterEncodingURL multiPartFormDataHandler:nil];
 }
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
++ (instancetype)requestWithURLString:(NSString *)url HTTPMethod:(NSString *)method parameters:(NSDictionary *)parameters encoding:(GCParameterEncoding)encoding
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:method parameters:parameters encoding:encoding multiPartFormDataHandler:nil];
 }
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
++ (instancetype)requestWithURLString:(NSString *)url parameters:(NSDictionary *)parameters multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block
 {
     return [[[self class] alloc] initWithURLString:url HTTPMethod:@"POST" parameters:parameters encoding:GCParameterEncodingURL multiPartFormDataHandler:block];
 }

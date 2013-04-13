@@ -1,14 +1,7 @@
 //
-//  GCNetworkQueue.m
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 15/09/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +25,7 @@
 #import "GCHTTPRequestOperation.h"
 
 #if ! __has_feature(objc_arc)
-#error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
+#   error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
 static signed char kOperationCountStatusContext;
@@ -71,11 +64,9 @@ static NSString * const kOperationCountKey = @"operationCount";
 #if TARGET_OS_IPHONE
 - (void)enableNetworkActivityIndicator:(BOOL)enable
 {
-    if (enable)
-    {
-        self->_enableNetworkActivityIndicator = enable;
-        [self addObserver:self forKeyPath:kOperationCountKey options:0 context:&kOperationCountStatusContext];
-    }
+    self->_enableNetworkActivityIndicator = enable;
+    
+    if (enable) [self addObserver:self forKeyPath:kOperationCountKey options:0 context:&kOperationCountStatusContext];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context

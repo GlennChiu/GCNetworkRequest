@@ -1,14 +1,7 @@
 //
-//  GCNetworkRequest.h
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 15-07-12.
-//  Copyright (c) 2012 Dot Square. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -40,20 +33,20 @@ typedef enum : unsigned char
 
 @interface GCNetworkRequest : NSMutableURLRequest
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url;
++ (instancetype)requestWithURLString:(NSString *)url;
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url
-                                HTTPMethod:(NSString *)method
-                                parameters:(NSDictionary *)parameters;
++ (instancetype)requestWithURLString:(NSString *)url
+                          HTTPMethod:(NSString *)method
+                          parameters:(NSDictionary *)parameters;
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url
-                                HTTPMethod:(NSString *)method
-                                parameters:(NSDictionary *)parameters
-                                  encoding:(GCParameterEncoding)encoding;
++ (instancetype)requestWithURLString:(NSString *)url
+                          HTTPMethod:(NSString *)method
+                          parameters:(NSDictionary *)parameters
+                            encoding:(GCParameterEncoding)encoding;
 
-+ (GCNetworkRequest *)requestWithURLString:(NSString *)url
-                                parameters:(NSDictionary *)parameters
-                  multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block;
++ (instancetype)requestWithURLString:(NSString *)url
+                          parameters:(NSDictionary *)parameters
+            multiPartFormDataHandler:(void(^)(id <GCMultiPartFormData> formData))block;
 
 
 - (void)setValue:(NSString *)value

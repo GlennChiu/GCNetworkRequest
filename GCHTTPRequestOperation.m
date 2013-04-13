@@ -1,14 +1,7 @@
 //
-//  GCHTTPRequestOperation.m
-//  GCNetworkRequest
-//
-//  Created by Glenn Chiu on 05/09/2012.
-//  Copyright (c) 2012 Glenn Chiu. All rights reserved.
-//
-
 //  This code is distributed under the terms and conditions of the MIT license.
-
-//  Copyright (c) 2012 Glenn Chiu
+//
+//  Copyright (c) 2013 Glenn Chiu
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +25,7 @@
 #import "GCNetworkRequest.h"
 
 #if ! __has_feature(objc_arc)
-#error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
+#   error GCNetworkRequest is ARC only. Use -fobjc-arc as compiler flag for this library
 #endif
 
 #ifdef DEBUG
@@ -109,7 +102,7 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
     void(^_uploadProgressBlock)(NSUInteger, NSUInteger, NSUInteger);
 }
 
-+ (GCHTTPRequestOperation *)HTTPRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock
++ (instancetype)HTTPRequest:(GCNetworkRequest *)networkRequest callBackQueue:(dispatch_queue_t)queue completionHandler:(void(^)(NSData *data, NSHTTPURLResponse *response))completionBlock errorHandler:(void(^)(NSData *data, NSHTTPURLResponse *response, NSError *error))errorBlock
 {
     return [[self alloc] initWithHTTPRequest:networkRequest callBackQueue:queue completionHandler:completionBlock errorHandler:errorBlock];
 }
@@ -247,17 +240,22 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 {
     dispatch_semaphore_wait(self->_cancel_lock, DISPATCH_TIME_FOREVER);
     
-    if (![self isCancelled])
+    @try
     {
-        [self willChangeValueForKey:@"isCancelled"];
-        self->_isCancelled = YES;
-        [self didChangeValueForKey:@"isCancelled"];
-        
-        [self performSelector:@selector(cleanupStream:) onThread:[[self class] workerThread] withObject:self->_oStream waitUntilDone:NO];
-        [self performSelector:@selector(cancelConnection) onThread:[[self class] workerThread] withObject:nil waitUntilDone:NO];
+        if (![self isCancelled])
+        {
+            [self willChangeValueForKey:@"isCancelled"];
+            self->_isCancelled = YES;
+            [self didChangeValueForKey:@"isCancelled"];
+            
+            [self performSelector:@selector(cleanupStream:) onThread:[[self class] workerThread] withObject:self->_oStream waitUntilDone:NO];
+            [self performSelector:@selector(cancelConnection) onThread:[[self class] workerThread] withObject:nil waitUntilDone:NO];
+        }
     }
-    
-    dispatch_semaphore_signal(self->_cancel_lock);
+    @finally
+    {
+        dispatch_semaphore_signal(self->_cancel_lock);
+    }
 }
 
 - (void)cancelConnection
@@ -440,18 +438,23 @@ inline dispatch_queue_t gc_dispatch_queue(dispatch_queue_t queue)
 {
     dispatch_semaphore_wait(self->_bg_lock, DISPATCH_TIME_FOREVER);
     
-    dispatch_block_t endBlock = ^{
+    @try
+    {
+        dispatch_block_t endBlock = ^{
+            
+            if (block) block();
+            
+            [self cancel];
+            
+            [self endBackgroundTask];
+        };
         
-        if (block) block();
-        
-        [self cancel];
-        
-        [self endBackgroundTask];
-    };
-    
-    self->_bgTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:endBlock];
-    
-    dispatch_semaphore_signal(self->_bg_lock);
+        self->_bgTaskIdentifier = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:endBlock];
+    }
+    @finally
+    {
+        dispatch_semaphore_signal(self->_bg_lock);
+    }
 }
 #endif
 
